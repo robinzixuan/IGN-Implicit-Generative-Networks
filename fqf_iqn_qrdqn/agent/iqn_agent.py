@@ -137,9 +137,9 @@ class IQNAgent(BaseAgent):
             z = z_1 = taus = torch.rand(
                 self.batch_size, self.N, dtype=state_embeddings.dtype,
                 device=state_embeddings.device)
-            x=self.online_net(z,states)
+            x=self.online_net.calculate_quantiles(z,states)
             print(x.shape())
-            x_1 = rewards + self.gamma * self.online_net(z_1,next_states)
+            x_1 = rewards + self.gamma * self.online_net.calculate_quantiles(z_1,next_states)
             interpolated = epsilon * x + (1-epsilon)*x_1
             
             interpolated = Variable(interpolated, requires_grad=True).to(self.device)
