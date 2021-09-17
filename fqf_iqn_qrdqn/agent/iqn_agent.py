@@ -130,7 +130,7 @@ class IQNAgent(BaseAgent):
         for _ in range(self.n_critic):
             states, actions, rewards, next_states, _ =\
                 self.memory.sample(self.batch_size)
-            next_reward = self.exploit(next_states.to('cpu'))
+            #next_reward = self.exploit(next_states.to('cpu'))
             epsilon = torch.FloatTensor(1, self.batch_size).uniform_(0, 1)
             #z = torch.normal(0,1,size=(1,self.batch_size))
             #z_1 = torch.normal(0,1,size=(1,self.batch_size))
