@@ -140,7 +140,8 @@ class IQNAgent(BaseAgent):
             x=self.online_net.calculate_quantiles(z,states)
             print(x.shape)
             print(rewards.shape)
-            x_1 = rewards + self.gamma * self.online_net.calculate_quantiles(z_1,next_states)
+            x_1 = self.gamma * self.online_net.calculate_quantiles(z_1,next_states)
+            x_1 = rewards + x_1
             interpolated = epsilon * x + (1-epsilon)*x_1
             
             interpolated = Variable(interpolated, requires_grad=True).to(self.device)
