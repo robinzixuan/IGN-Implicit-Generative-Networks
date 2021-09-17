@@ -139,6 +139,7 @@ class IQNAgent(BaseAgent):
                 device=state_embeddings.device)
             x=self.online_net.calculate_quantiles(z,states)
             print(x.shape)
+            print(rewards.shape)
             x_1 = rewards + self.gamma * self.online_net.calculate_quantiles(z_1,next_states)
             interpolated = epsilon * x + (1-epsilon)*x_1
             
