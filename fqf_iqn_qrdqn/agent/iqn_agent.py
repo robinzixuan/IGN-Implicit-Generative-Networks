@@ -106,18 +106,15 @@ class IQNAgent(BaseAgent):
         # Calculate features of states.
         state_embeddings = self.online_net.calculate_state_embeddings(states)
 
-        quantile_loss, mean_q, errors = self.calculate_loss(
+        quantile_loss, mean_q = self.calculate_loss(
             state_embeddings)
-        assert errors.shape == (self.batch_size, 1)
-
+       
         update_params(
             self.optim, quantile_loss,
             networks=[self.online_net],
             retain_graph=False, grad_cliping=self.grad_cliping)
 
-        if self.use_per:
-            self.memory.update_priority(errors)
-
+       
         if 4*self.steps % self.log_interval == 0:
             self.writer.add_scalar(
                 'loss/quantile_loss', quantile_loss.detach().item(),
@@ -133,7 +130,7 @@ class IQNAgent(BaseAgent):
         for _ in range(self.n_critic):
             states, actions, rewards, next_states, _ =\
                 self.memory.sample(self.batch_size)
-            next_reward = self.exploit(next_states)
+            next_reward = self.exploit(next_states.to('cpu'))
             epsilon = torch.FloatTensor(1, self.batch_size).uniform_(0, 1)
             #z = torch.normal(0,1,size=(1,self.batch_size))
             #z_1 = torch.normal(0,1,size=(1,self.batch_size))
@@ -158,11 +155,24 @@ class IQNAgent(BaseAgent):
 
             GAN_loss = self.discriminator(x) - self.discriminator(x_1) + self.lamda * ((gradients.norm(2, dim=1) - 1) ** 2).mean() 
 
+            with torch.no_grad():
+            # Calculate Q values of next states.
+                if self.double_q_learning:
+                    # Sample the noise of online network to decorrelate between
+                    # the action selection and the quantile calculation.
+                    self.online_net.sample_noise()
+                    next_q = self.online_net.calculate_q(states=next_states)
+                else:
+                    next_state_embeddings =\
+                        self.target_net.calculate_state_embeddings(next_states)
+                    next_q = self.target_net.calculate_q(
+                        state_embeddings=next_state_embeddings)
 
 
             adam = optim.Adam(self.discriminator.parameters(), lr=self.lr) 
             adam.step() 
-            return GAN_loss
+            return GAN_loss,next_q.detach().mean().item(), \
+            td_errors.detach().abs().sum(dim=1).mean(dim=1, keepdim=True)
 
 
 
