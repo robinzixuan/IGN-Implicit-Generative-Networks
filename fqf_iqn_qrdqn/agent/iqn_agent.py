@@ -107,7 +107,7 @@ class IQNAgent(BaseAgent):
         state_embeddings = self.online_net.calculate_state_embeddings(states)
 
         quantile_loss, mean_q, errors = self.calculate_loss(
-            state_embeddings, actions, rewards, next_states, dones, weights)
+            state_embeddings)
         assert errors.shape == (self.batch_size, 1)
 
         update_params(
