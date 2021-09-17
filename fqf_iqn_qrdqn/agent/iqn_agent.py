@@ -138,7 +138,7 @@ class IQNAgent(BaseAgent):
                 self.batch_size, self.N, dtype=state_embeddings.dtype,
                 device=state_embeddings.device)
             x=self.online_net.calculate_quantiles(z,states)
-            print(x.shape())
+            print(x.shape)
             x_1 = rewards + self.gamma * self.online_net.calculate_quantiles(z_1,next_states)
             interpolated = epsilon * x + (1-epsilon)*x_1
             
