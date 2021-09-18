@@ -183,7 +183,7 @@ class QuantileNetwork(nn.Module):
                 baselines + advantages - advantages.mean(1, keepdim=True)
         
         
-        return quantiles.view(batch_size, 1)
+        return quantiles.view(batch_size, N, self.num_actions)
 
 
 class NoisyLinear(nn.Module):
