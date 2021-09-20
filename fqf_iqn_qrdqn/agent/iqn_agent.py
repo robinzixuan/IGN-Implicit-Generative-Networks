@@ -88,6 +88,8 @@ class IQNAgent(BaseAgent):
         self.lr = lr
         self.n_critic = 5
         self.gamma = gamma
+        self.discriminator_optim = optim.Adam(self.discriminator.parameters(), lr=self.lr)
+        self.generator_optim = optim.Adam(self.online_net.parameters(),lr=self.lr)
 
     def learn(self):
         self.learning_steps += 1
@@ -179,16 +181,17 @@ class IQNAgent(BaseAgent):
         assert target_sa_quantiles.shape == (self.batch_size, self.N_dash, 1)
         assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
 
-
+        current_sa_quantiles = self.discriminator(current_sa_quantiles)
+        target_sa_quantiles = self.discriminator(target_sa_quantiles)
         td_errors = target_sa_quantiles - current_sa_quantiles
-        GAN_loss = torch.min(td_errors)
-        Generator_loss = torch.max(td_errors)
-
-
-        adam = optim.Adam(self.discriminator.parameters(), lr=self.lr) 
-        adam.step() 
-        adam1 = optim.Adam(self.online_net.parameters(),lr=self.lr)
-        adam1.step()
+        
+        
+        self.discriminator.zero_grad()
+        GAN_loss = (current_sa_quantiles - target_sa_quantiles).mean()
+        GAN_loss.backward()
+        self.discriminator_optim.step() 
+        
+        self.generator_optim.step()
         return GAN_loss
 
 
