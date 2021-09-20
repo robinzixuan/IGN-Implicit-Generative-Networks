@@ -108,7 +108,7 @@ class IQNAgent(BaseAgent):
         # Calculate features of states.
         state_embeddings = self.online_net.calculate_state_embeddings(states)
 
-        quantile_loss = self.calculate_loss(
+        quantile_loss, mean_q = self.online_net.calculate_loss(
             state_embeddings,actions, rewards, next_states, dones, weights)
        
         update_params(
@@ -116,13 +116,13 @@ class IQNAgent(BaseAgent):
             networks=[self.online_net],
             retain_graph=False, grad_cliping=self.grad_cliping)
 
-        '''
+        
         if 4*self.steps % self.log_interval == 0:
             self.writer.add_scalar(
                 'loss/quantile_loss', quantile_loss.detach().item(),
                 4*self.steps)
             self.writer.add_scalar('stats/mean_Q', mean_q, 4*self.steps)
-        '''
+        
 
     def calculate_loss(self, state_embeddings, actions, rewards, next_states,
                        dones, weights, lamda  = 10):
@@ -181,18 +181,25 @@ class IQNAgent(BaseAgent):
         assert target_sa_quantiles.shape == (self.batch_size, self.N_dash, 1)
         assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
 
-        current_sa_quantiles = self.discriminator(current_sa_quantiles)
-        target_sa_quantiles = self.discriminator(target_sa_quantiles)
-        td_errors = target_sa_quantiles - current_sa_quantiles
+        current_sa_quantiles_d = self.discriminator(current_sa_quantiles)
+        target_sa_quantiles_d = self.discriminator(target_sa_quantiles)
         
+
+        for p in self.discriminator.parameters():
+            p.requires_grad = True
         
         self.discriminator.zero_grad()
-        GAN_loss = (current_sa_quantiles - target_sa_quantiles).mean()
+        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean()
         GAN_loss.backward()
         self.discriminator_optim.step() 
         
+        for p in self.discriminator.parameters():
+            p.requires_grad = False  # to avoid computation
+        self.online_net.zero_grad()
+        Q_loss = -1. * self.discriminator(current_sa_quantiles).mean()
+        Q_loss.backward()
         self.generator_optim.step()
-        return GAN_loss
+        return GAN_loss, Q_loss
 
 
 
