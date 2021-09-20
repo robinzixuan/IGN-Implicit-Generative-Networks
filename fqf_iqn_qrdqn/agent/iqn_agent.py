@@ -178,8 +178,8 @@ class IQNAgent(BaseAgent):
 
         target_sa_quantiles=target_sa_quantiles[:,torch.randperm(target_sa_quantiles.size(1))]
         current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))]
-        assert target_sa_quantiles.shape == (self.batch_size, self.N_dash, 1)
         assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
+        assert target_sa_quantiles.shape == (self.batch_size, self.N, 1)
 
         current_sa_quantiles_d = self.discriminator(current_sa_quantiles)
         target_sa_quantiles_d = self.discriminator(target_sa_quantiles)
