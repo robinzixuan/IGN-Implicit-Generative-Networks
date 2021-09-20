@@ -138,7 +138,7 @@ class IQNAgent(BaseAgent):
                 taus, state_embeddings=state_embeddings), actions)
         
 
-        with torch.ncurrent_sa_quantileso_grad():
+        with torch.no_grad():
             # Calculate Q values of next states.
             if self.double_q_learning:
                 # Sample the noise of online network to decorrelate between
