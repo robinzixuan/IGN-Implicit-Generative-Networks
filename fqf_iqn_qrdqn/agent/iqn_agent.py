@@ -108,7 +108,7 @@ class IQNAgent(BaseAgent):
         # Calculate features of states.
         state_embeddings = self.online_net.calculate_state_embeddings(states)
 
-        quantile_loss, mean_q = self.online_net.calculate_loss(
+        quantile_loss, mean_q = self.calculate_loss(
             state_embeddings,actions, rewards, next_states, dones, weights)
        
         update_params(
