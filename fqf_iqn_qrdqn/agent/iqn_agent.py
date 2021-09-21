@@ -104,7 +104,7 @@ class IQNAgent(BaseAgent):
                 self.memory.sample(self.batch_size)
             weights = None
 
-        print(self.memory.sample)
+        #print(self.memory.sample)
         # Calculate features of states.
         state_embeddings = self.online_net.calculate_state_embeddings(states)
 
