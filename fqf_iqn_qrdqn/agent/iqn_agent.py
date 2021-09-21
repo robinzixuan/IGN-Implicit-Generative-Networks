@@ -198,7 +198,7 @@ class IQNAgent(BaseAgent):
             p.requires_grad = False  # to avoid computation
         self.online_net.zero_grad()
         Q_loss = -1. * self.discriminator(current_sa_quantiles).mean()
-        Q_loss.backward()
+        #Q_loss.backward()
         self.generator_optim.step()
         return GAN_loss, Q_loss
 
