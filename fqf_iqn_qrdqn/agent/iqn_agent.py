@@ -110,12 +110,12 @@ class IQNAgent(BaseAgent):
 
         quantile_loss, mean_q = self.calculate_loss(
             state_embeddings,actions, rewards, next_states, dones, weights)
-        ''''
+        '''
         update_params(
             self.generator_optim, quantile_loss,
             networks=[self.online_net],
             retain_graph=False, grad_cliping=self.grad_cliping)
-        ''''
+        '''
         
         if 4*self.steps % self.log_interval == 0:
             self.writer.add_scalar(
