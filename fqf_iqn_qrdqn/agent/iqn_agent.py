@@ -114,7 +114,7 @@ class IQNAgent(BaseAgent):
         update_params(
             self.generator_optim, quantile_loss,
             networks=[self.online_net],
-            retain_graph=False, grad_cliping=self.grad_cliping)
+            retain_graph=True, grad_cliping=self.grad_cliping)
 
         
         if 4*self.steps % self.log_interval == 0:
