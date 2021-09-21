@@ -25,9 +25,9 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Linear(64, 128),
+            nn.Linear(64, 512),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 256),
+            nn.Linear(512, 256),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(256, 64),
         )
@@ -180,7 +180,7 @@ class IQNAgent(BaseAgent):
         current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))]
         assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
         assert target_sa_quantiles.shape == (self.batch_size, 1,self.N)
-        print(target_sa_quantiles.shape)
+        
 
         current_sa_quantiles_d = self.discriminator(current_sa_quantiles)
         target_sa_quantiles_d = self.discriminator(target_sa_quantiles)
