@@ -112,7 +112,7 @@ class IQNAgent(BaseAgent):
             state_embeddings,actions, rewards, next_states, dones, weights)
        
         update_params(
-            self.optim, quantile_loss,
+            self.generator_optim, quantile_loss,
             networks=[self.online_net],
             retain_graph=False, grad_cliping=self.grad_cliping)
 
