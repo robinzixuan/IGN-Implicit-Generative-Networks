@@ -26,9 +26,9 @@ class Discriminator(nn.Module):
 
         self.model = nn.Sequential(
             nn.Linear(64, 512),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2),
             nn.Linear(512, 256),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2),
             nn.Linear(256, 64),
         )
 
