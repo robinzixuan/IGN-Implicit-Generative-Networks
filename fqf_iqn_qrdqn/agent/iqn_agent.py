@@ -26,9 +26,9 @@ class Discriminator(nn.Module):
 
         self.model = nn.Sequential(
             nn.Linear(64, 512),
-            nn.LeakyReLU(0.2, inplace=False),
+            nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(512, 256),
-            nn.LeakyReLU(0.2, inplace=False),
+            nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(256, 64),
         )
 
@@ -88,7 +88,7 @@ class IQNAgent(BaseAgent):
         self.lr = lr
         self.n_critic = 5
         self.gamma = gamma
-        self.discriminator_optim = optim.Adam(self.discriminator.parameters(), lr=self.lr)
+        self.discriminator_optim = optim.Adam(self.discriminator.parameters(), lr=self.lr * 3)
         self.generator_optim = optim.Adam(self.online_net.parameters(),lr=self.lr)
 
     def learn(self):
@@ -189,11 +189,11 @@ class IQNAgent(BaseAgent):
         for p in self.discriminator.parameters():
             p.requires_grad = True
         
-        for i in range(self.n_critic):
-            self.discriminator.zero_grad()
-            GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean()
-            GAN_loss.backward(retain_graph=True)
-            self.discriminator_optim.step() 
+       
+        self.discriminator.zero_grad()
+        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean()
+        GAN_loss.backward(retain_graph=True)
+        self.discriminator_optim.step() 
         
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
