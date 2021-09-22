@@ -189,11 +189,11 @@ class IQNAgent(BaseAgent):
         for p in self.discriminator.parameters():
             p.requires_grad = True
         
-       
-        self.discriminator.zero_grad()
-        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().clone()
-        GAN_loss.backward(retain_graph=True)
-        self.discriminator_optim.step() 
+        for i in range(self.n_critic):
+            self.discriminator.zero_grad()
+            GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().clone()
+            GAN_loss.backward(retain_graph=True)
+            self.discriminator_optim.step() 
         
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
