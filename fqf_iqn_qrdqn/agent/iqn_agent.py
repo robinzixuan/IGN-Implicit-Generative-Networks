@@ -191,7 +191,7 @@ class IQNAgent(BaseAgent):
         
        
         self.discriminator.zero_grad()
-        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean()
+        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().clone()
         GAN_loss.backward(retain_graph=True)
         self.discriminator_optim.step() 
         
