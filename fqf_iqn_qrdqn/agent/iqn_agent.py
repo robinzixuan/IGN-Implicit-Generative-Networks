@@ -184,7 +184,8 @@ class IQNAgent(BaseAgent):
 
         current_sa_quantiles_d = self.discriminator(current_sa_quantiles)
         target_sa_quantiles_d = self.discriminator(target_sa_quantiles)
-        
+        td_errors = target_sa_quantiles - current_sa_quantiles
+        assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
 
         for p in self.discriminator.parameters():
             p.requires_grad = True
@@ -196,13 +197,15 @@ class IQNAgent(BaseAgent):
         GAN_loss.backward(retain_graph=True)
         self.discriminator_optim.step() 
         
+        print(GAN_loss)
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
         self.online_net.zero_grad()
         Q_loss = -1. * self.discriminator(current_sa_quantiles).mean()
         Q_loss.backward(retain_graph=True)
         self.generator_optim.step()
-        return GAN_loss, Q_loss
+        return GAN_loss, td_errors.detach().abs().sum(dim=1).mean(dim=1, keepdim=True)
+
 
 
 
