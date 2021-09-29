@@ -42,11 +42,11 @@ class Discriminator(nn.Module):
         action_hot = torch.nn.functional.one_hot(action).reshape(-1,6)
         img = self.Linear1(img)
         action_hot = self.Linear2(action_hot.float())
-        print(states.shape)
-        states = self.Linear3(states)
+        print(state_embeddings.shape)
+        state_embeddings = self.Linear3(state_embeddings)
         print(action_hot.shape)
         print(img.shape)
-        print(states.shape)
+        print(state_embeddings.shape)
 
 
         
