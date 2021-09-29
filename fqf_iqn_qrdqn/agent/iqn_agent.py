@@ -186,8 +186,8 @@ class IQNAgent(BaseAgent):
                 1.0 - dones[..., None]) * self.gamma_n * next_sa_quantiles
 
 
-        target_sa_quantiles=target_sa_quantiles[:,torch.randperm(target_sa_quantiles.size(1))]
-        current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))].reshape((self.batch_size, self.N, 1))
+        target_sa_quantiles=target_sa_quantiles[:,torch.randperm(target_sa_quantiles.size(1))].reshape((self.batch_size, self.N, 1))
+        current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))]
         assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
         #assert target_sa_quantiles.shape == (self.batch_size, 1,self.N)
         
