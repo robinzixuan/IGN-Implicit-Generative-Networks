@@ -209,6 +209,7 @@ class IQNAgent(BaseAgent):
         #for i in range(self.n_critic):
         self.discriminator.zero_grad()
         GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d)
+        print(GAN_loss)
         GAN_loss.backward(retain_graph=True)
         self.discriminator_optim.step() 
         
