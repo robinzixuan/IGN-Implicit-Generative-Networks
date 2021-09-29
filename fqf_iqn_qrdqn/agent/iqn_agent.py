@@ -32,7 +32,6 @@ class Discriminator(nn.Module):
         
     def forward(self, img, states = None, action = None):
         #img_flat = img.view(img.shape[0], -1)
-        print(img.shape)
         batch_size = states.shape[0]
         action = torch.unsqueeze(action, dim=1).repeat(1, 64, 1)
         action= action.reshape(batch_size * 64, *action.shape[2:])
@@ -44,6 +43,9 @@ class Discriminator(nn.Module):
         img = self.Linear1(img)
         action_hot = self.Linear2(action_hot.float())
         state_embeddings = self.Linear3(state_embeddings)  
+        print(state_embeddings.shape)
+        print(action_hot.shape)
+        print(img.shape)
         concat = torch.cat((img, state_embeddings, action_hot), 1)
         validity = torch.argmax(concat)
         
