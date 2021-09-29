@@ -43,7 +43,9 @@ class Discriminator(nn.Module):
         states = torch.unsqueeze(states, dim=1).repeat(1, 64, 1, 1, 1)
         states = states.reshape(batch_size * 64, *states.shape[2:])
         state_embeddings = self.dqn_net(states)
+        img = img.reshape(batch_size * 64, *img.shape[2:])
 
+        print(img_flat.shape)
         print(img.shape)
         print(state_embeddings.shape)
         print(action.shape)
