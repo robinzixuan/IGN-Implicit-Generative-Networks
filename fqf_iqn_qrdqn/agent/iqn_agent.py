@@ -37,8 +37,10 @@ class Discriminator(nn.Module):
         
     def forward(self, img, states = None, action = None):
         img_flat = img.view(img.shape[0], -1)
-        print(states.shape)
-        states = states.repeat(1, 64, 1)
+        batch_size = states.shape[0]
+        action = torch.unsqueeze(action, dim=1).repeat(1, 64, 1)
+        #states = torch.unsqueeze(states, dim=1).repeat(1, 64, 1)
+        #states = states.repeat(1, 64, 1)
         action = action.repeat(1,64,1)
         state_embeddings = self.dqn_net(states)
 
