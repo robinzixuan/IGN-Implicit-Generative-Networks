@@ -213,12 +213,12 @@ class IQNAgent(BaseAgent):
             p.requires_grad = True
         
         torch.autograd.set_detect_anomaly(True)
-        #for i in range(self.n_critic):
-        self.discriminator.zero_grad()
-        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().type(torch.FloatTensor)
-        print(GAN_loss)
-        GAN_loss.backward(retain_graph=True)
-        self.discriminator_optim.step() 
+        for i in range(self.n_critic):
+            self.discriminator.zero_grad()
+            GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().type(torch.FloatTensor)
+            #print(GAN_loss)
+            GAN_loss.backward(retain_graph=True)
+            self.discriminator_optim.step() 
         
         
         for p in self.discriminator.parameters():
