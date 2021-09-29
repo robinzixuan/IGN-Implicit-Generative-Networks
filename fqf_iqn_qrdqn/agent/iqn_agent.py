@@ -24,8 +24,8 @@ class Discriminator(nn.Module):
     def __init__(self, num_channels):
         super(Discriminator, self).__init__()
         self.dqn_net = DQNBase(num_channels=num_channels)
-        self.Linear1 = nn.Linear()
-        self.Linear2 = nn.Linear()
+        #self.Linear1 = nn.Linear()
+        #self.Linear2 = nn.Linear()
         
 
         
