@@ -36,7 +36,7 @@ class Discriminator(nn.Module):
 
         
     def forward(self, img, states = None, action = None):
-        img_flat = img.view(img.shape[0], -1)
+        #img_flat = img.view(img.shape[0], -1)
         batch_size = states.shape[0]
         action = torch.unsqueeze(action, dim=1).repeat(1, 64, 1)
         action= action.reshape(batch_size * 64, *action.shape[2:])
@@ -45,10 +45,16 @@ class Discriminator(nn.Module):
         state_embeddings = self.dqn_net(states)
         img = img.reshape(batch_size * 64, *img.shape[2:])
 
-        print(img_flat.shape)
+        
         print(img.shape)
         print(state_embeddings.shape)
         print(action.shape)
+        N = 64
+        action_index = action[..., None].expand(batch_size, N, 1)
+        print(action_index)
+        print(action_index.shape)
+
+
         
         #validity = self.model(img_flat)
         validity = evaluate_quantile_at_action(state_embeddings, action).transpose(1, 2)
