@@ -29,7 +29,7 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(
                 nn.Linear(3136,1024),
                 nn.Linear(1024,512),
-                nn.relu(),
+                nn.ReLU(),
                 nn.Linear(512,256))
         self.output = nn.Linear(512,1)
         self.n = n
