@@ -45,14 +45,8 @@ class Discriminator(nn.Module):
         state_embeddings = self.Linear3(state_embeddings)  
         concat = torch.cat((img, state_embeddings, action_hot), 1)
         print(concat.shape)
-
-
+        validity = torch.argmax(concat)
         
-
-
-        
-        #validity = self.model(img_flat)
-        validity = evaluate_quantile_at_action(state_embeddings, action).transpose(1, 2)
         return validity
 
 
