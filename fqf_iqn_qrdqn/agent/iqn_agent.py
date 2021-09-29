@@ -223,7 +223,7 @@ class IQNAgent(BaseAgent):
         Q_loss = -1. * self.discriminator(current_sa_quantiles, states, actions).mean()
         Q_loss.backward(retain_graph=True)
         self.generator_optim.step()
-        return GAN_loss, td_errors.detach().abs().sum(dim=1).mean(dim=1, keepdim=True)
+        return GAN_loss, current_sa_quantiles.detach().mean()
 
 
 
