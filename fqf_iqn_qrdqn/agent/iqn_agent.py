@@ -21,12 +21,15 @@ from fqf_iqn_qrdqn.network import DQNBase
 
 
 class Discriminator(nn.Module):
-    def __init__(self, num_channels):
+    def __init__(self, num_channels, n):
         super(Discriminator, self).__init__()
         self.dqn_net = DQNBase(num_channels=num_channels)
         self.Linear1 = nn.Linear(1,128)
-        self.Linear2 = nn.Linear(6,128)
+        self.Linear2 = nn.Linear(n,128)
         self.Linear3 = nn.Linear(3136,512)
+        self.output = nn.Linear(256+512,1)
+        self.n = n
+        
         
 
         
@@ -40,17 +43,17 @@ class Discriminator(nn.Module):
         state_embeddings = self.dqn_net(states)
         img = img.reshape(batch_size * 64, *img.shape[2:])  #torch.Size([2048, 1])
         
-        action_hot = torch.nn.functional.one_hot(action, num_classes = 6)
-        action_hot = action_hot.reshape(-1,6)
+        action_hot = torch.nn.functional.one_hot(action, num_classes = self.n)
+        action_hot = action_hot.reshape(-1,self.n)
 
-        img = self.Linear1(img)
-        action_hot = self.Linear2(action_hot.float())
-        state_embeddings = self.Linear3(state_embeddings)  
+        img = torch.nn.functional.relu(self.Linear1(img))
+        action_hot = torch.nn.functional.relu(self.Linear2(action_hot.float()))
+        state_embeddings = torch.nn.functional.relu(self.Linear3(state_embeddings))  
         #print(state_embeddings.shape)
         #print(action_hot.shape)
         #print(img.shape)
         concat = torch.cat((img, state_embeddings, action_hot), 1)
-        validity = torch.argmax(concat)
+        validity = self.output(concat)
         
         return validity
 
@@ -87,7 +90,7 @@ class IQNAgent(BaseAgent):
             num_actions=self.num_actions, K=K, num_cosines=num_cosines,
             dueling_net=dueling_net, noisy_net=noisy_net).to(self.device)
 
-        self.discriminator = Discriminator(num_channels=env.observation_space.shape[0]).to(self.device)
+        self.discriminator = Discriminator(num_channels=env.observation_space.shape[0], n = env.action_space.n).to(self.device)
 
         # Copy parameters of the learning network to the target network.
         self.update_target()
@@ -198,7 +201,7 @@ class IQNAgent(BaseAgent):
         
 
         current_sa_quantiles_d = self.discriminator(current_sa_quantiles, states, actions)
-        target_sa_quantiles_d = self.discriminator(target_sa_quantiles,next_states, next_actions)
+        target_sa_quantiles_d = self.discriminator(target_sa_quantiles,states, actions)
         td_errors = target_sa_quantiles - current_sa_quantiles
         #assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
 
@@ -208,7 +211,7 @@ class IQNAgent(BaseAgent):
         torch.autograd.set_detect_anomaly(True)
         #for i in range(self.n_critic):
         self.discriminator.zero_grad()
-        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).type(torch.FloatTensor)
+        GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().type(torch.FloatTensor)
         print(GAN_loss)
         GAN_loss.backward(retain_graph=True)
         self.discriminator_optim.step() 
@@ -217,7 +220,7 @@ class IQNAgent(BaseAgent):
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
         self.online_net.zero_grad()
-        Q_loss = -1. * self.discriminator(current_sa_quantiles)
+        Q_loss = -1. * self.discriminator(current_sa_quantiles, states, actions).mean()
         Q_loss.backward(retain_graph=True)
         self.generator_optim.step()
         return GAN_loss, td_errors.detach().abs().sum(dim=1).mean(dim=1, keepdim=True)
