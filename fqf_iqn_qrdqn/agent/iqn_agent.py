@@ -44,9 +44,9 @@ class Discriminator(nn.Module):
         img = self.Linear1(img)
         action_hot = self.Linear2(action_hot.float())
         state_embeddings = self.Linear3(state_embeddings)  
-        print(state_embeddings.shape)
-        print(action_hot.shape)
-        print(img.shape)
+        #print(state_embeddings.shape)
+        #print(action_hot.shape)
+        #print(img.shape)
         concat = torch.cat((img, state_embeddings, action_hot), 1)
         validity = torch.argmax(concat)
         
