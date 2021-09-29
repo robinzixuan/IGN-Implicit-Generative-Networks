@@ -26,9 +26,9 @@ class Discriminator(nn.Module):
         self.dqn_net = DQNBase(num_channels=num_channels)
         self.model = nn.Sequential(
             nn.Linear(64, 512),
-            nn.Leaky(0.2, inplace=True),
+            nn.LeakyLinear(0.2, inplace=True),
             nn.Linear(512, 256),
-            nn.Leaky(0.2, inplace=True),
+            nn.LeakyLinear(0.2, inplace=True),
             nn.Linear(256, 64),
         )
 
