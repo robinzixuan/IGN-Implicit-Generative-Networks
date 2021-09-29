@@ -24,8 +24,9 @@ class Discriminator(nn.Module):
     def __init__(self, num_channels):
         super(Discriminator, self).__init__()
         self.dqn_net = DQNBase(num_channels=num_channels)
-        #self.Linear1 = nn.Linear()
-        #self.Linear2 = nn.Linear()
+        self.Linear1 = nn.Linear(1,64)
+        self.Linear2 = nn.Linear(6,64)
+        self.Linear3 = nn.Linear(3136,128)
         
 
         
@@ -38,7 +39,7 @@ class Discriminator(nn.Module):
         states = states.reshape(batch_size * 64, *states.shape[2:])
         state_embeddings = self.dqn_net(states)
         img = img.reshape(batch_size * 64, *img.shape[2:])  #torch.Size([2048, 1])
-        action_hot = torch.nn.functional.one_hot(action)
+        action_hot = torch.nn.functional.one_hot(action).reshape(batch_size * 64, *action.shape[2:])
         print(action_hot.shape)
         print(img.shape)
 
