@@ -32,6 +32,7 @@ class Discriminator(nn.Module):
         
     def forward(self, img, states = None, action = None):
         #img_flat = img.view(img.shape[0], -1)
+        print(img.shape)
         batch_size = states.shape[0]
         action = torch.unsqueeze(action, dim=1).repeat(1, 64, 1)
         action= action.reshape(batch_size * 64, *action.shape[2:])
