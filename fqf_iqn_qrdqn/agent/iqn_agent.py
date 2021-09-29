@@ -41,7 +41,7 @@ class Discriminator(nn.Module):
         img = img.reshape(batch_size * 64, *img.shape[2:])  #torch.Size([2048, 1])
         action_hot = torch.nn.functional.one_hot(action)
         img = self.Linear1(img)
-        states = self.Linear3(states)
+        #states = self.Linear3(states)
         print(action_hot.shape)
         print(img.shape)
 
