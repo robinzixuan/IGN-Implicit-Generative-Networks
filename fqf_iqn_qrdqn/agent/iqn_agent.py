@@ -24,6 +24,7 @@ class Discriminator(nn.Module):
     def __init__(self, num_channels):
         super(Discriminator, self).__init__()
         self.dqn_net = DQNBase(num_channels=num_channels)
+        '''
         self.model = nn.Sequential(
             nn.Linear(64, 512),
             nn.LeakyLinear(0.2, inplace=True),
@@ -31,6 +32,7 @@ class Discriminator(nn.Module):
             nn.LeakyLinear(0.2, inplace=True),
             nn.Linear(256, 64),
         )
+        '''
 
         
     def forward(self, img, states = None, action = None):
