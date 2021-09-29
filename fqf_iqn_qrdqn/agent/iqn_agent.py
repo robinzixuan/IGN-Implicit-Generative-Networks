@@ -12,7 +12,7 @@ import torch.optim as optim
 
 from torch.autograd import Variable
 from torch import autograd
-
+from fqf_iqn_qrdqn.network import DQNBase
 
 
 
@@ -21,22 +21,27 @@ from torch import autograd
 
 
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, num_channels):
         super(Discriminator, self).__init__()
-
+        self.dqn_net = DQNBase(num_channels=num_channels)
         self.model = nn.Sequential(
             nn.Linear(64, 512),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.Leaky(0.2, inplace=True),
             nn.Linear(512, 256),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.Leaky(0.2, inplace=True),
             nn.Linear(256, 64),
         )
 
         
-    def forward(self, img):
+    def forward(self, img, states = None, action = None):
         img_flat = img.view(img.shape[0], -1)
+        state_embeddings = self.dqn_net(states)
+        print(img.shape)
+        print(state_embeddings.shape)
+        print(action.shape)
         
-        validity = self.model(img_flat)
+        #validity = self.model(img_flat)
+        validity = evaluate_quantile_at_action(state_embeddings, action).transpose(1, 2)
         return validity
 
 
@@ -72,7 +77,7 @@ class IQNAgent(BaseAgent):
             num_actions=self.num_actions, K=K, num_cosines=num_cosines,
             dueling_net=dueling_net, noisy_net=noisy_net).to(self.device)
 
-        self.discriminator = Discriminator().to(self.device)
+        self.discriminator = Discriminator(num_channels=env.observation_space.shape[0]).to(self.device)
 
         # Copy parameters of the learning network to the target network.
         self.update_target()
@@ -151,8 +156,8 @@ class IQNAgent(BaseAgent):
                 next_q = self.target_net.calculate_q(
                     state_embeddings=next_state_embeddings)
 
-            # Calculate greedy actions.
-            next_actions = torch.argmax(next_q, dim=1, keepdim=True)
+            #greedy 
+            next_actions =  torch.argmax(next_q, dim=1, keepdim=True)
             assert next_actions.shape == (self.batch_size, 1)
 
             # Calculate features of next states.
@@ -197,7 +202,7 @@ class IQNAgent(BaseAgent):
         GAN_loss.backward(retain_graph=True)
         self.discriminator_optim.step() 
         
-        print(GAN_loss)
+        
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
         self.online_net.zero_grad()
