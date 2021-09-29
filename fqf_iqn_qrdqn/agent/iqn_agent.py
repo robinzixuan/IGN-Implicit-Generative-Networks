@@ -115,7 +115,7 @@ class IQNAgent(BaseAgent):
         # Calculate features of states.
         state_embeddings = self.online_net.calculate_state_embeddings(states)
 
-        quantile_loss, mean_q = self.calculate_loss(
+        quantile_loss, mean_q = self.calculate_loss(states,
             state_embeddings,actions, rewards, next_states, dones, weights)
         '''
         update_params(
@@ -131,7 +131,7 @@ class IQNAgent(BaseAgent):
             self.writer.add_scalar('stats/mean_Q', mean_q, 4*self.steps)
         
 
-    def calculate_loss(self, state_embeddings, actions, rewards, next_states,
+    def calculate_loss(self, states, state_embeddings, actions, rewards, next_states,
                        dones, weights, lamda  = 10):
         
         self.lamda = lamda
@@ -189,8 +189,8 @@ class IQNAgent(BaseAgent):
         assert target_sa_quantiles.shape == (self.batch_size, 1,self.N)
         
 
-        current_sa_quantiles_d = self.discriminator(current_sa_quantiles)
-        target_sa_quantiles_d = self.discriminator(target_sa_quantiles)
+        current_sa_quantiles_d = self.discriminator(current_sa_quantiles, states, actions)
+        target_sa_quantiles_d = self.discriminator(target_sa_quantiles,next_states, next_actions)
         td_errors = target_sa_quantiles - current_sa_quantiles
         assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
 
