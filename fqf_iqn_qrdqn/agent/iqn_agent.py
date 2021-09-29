@@ -200,7 +200,7 @@ class IQNAgent(BaseAgent):
         current_sa_quantiles_d = self.discriminator(current_sa_quantiles, states, actions)
         target_sa_quantiles_d = self.discriminator(target_sa_quantiles,next_states, next_actions)
         td_errors = target_sa_quantiles - current_sa_quantiles
-        assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
+        #assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
 
         for p in self.discriminator.parameters():
             p.requires_grad = True
