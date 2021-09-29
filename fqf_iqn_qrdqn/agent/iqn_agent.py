@@ -44,7 +44,6 @@ class Discriminator(nn.Module):
         action_hot = self.Linear2(action_hot.float())
         state_embeddings = self.Linear3(state_embeddings)  
         concat = torch.cat((img, state_embeddings, action_hot), 1)
-        print(concat.shape)
         validity = torch.argmax(concat)
         
         return validity
@@ -187,9 +186,9 @@ class IQNAgent(BaseAgent):
 
 
         target_sa_quantiles=target_sa_quantiles[:,torch.randperm(target_sa_quantiles.size(1))]
-        current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))]
+        current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))].reshape((self.batch_size, self.N, 1))
         assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
-        assert target_sa_quantiles.shape == (self.batch_size, 1,self.N)
+        #assert target_sa_quantiles.shape == (self.batch_size, 1,self.N)
         
 
         current_sa_quantiles_d = self.discriminator(current_sa_quantiles, states, actions)
