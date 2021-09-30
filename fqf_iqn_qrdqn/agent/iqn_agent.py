@@ -56,7 +56,7 @@ class Discriminator(nn.Module):
         action_hot = torch.nn.functional.one_hot(action, num_classes = self.n)
         action_hot = action_hot.reshape(-1,self.n)
 
-        img = torch.nn.functional.relu(self.Linear1(img))
+        img = torch.nn.functional.relu(self.model2(img))
         action_hot = torch.nn.functional.relu(self.model1(action_hot.float()))
         state_embeddings = torch.nn.functional.relu(self.model(state_embeddings))  
         #print(state_embeddings.shape)
