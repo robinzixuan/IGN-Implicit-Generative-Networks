@@ -24,14 +24,20 @@ class Discriminator(nn.Module):
     def __init__(self, num_channels, n):
         super(Discriminator, self).__init__()
         self.dqn_net = DQNBase(num_channels=num_channels)
-        self.Linear1 = nn.Linear(1,128)
-        self.Linear2 = nn.Linear(n,128)
+        self.model2 = nn.Sequential(
+            nn.Linear(1,64),
+            nn.ReLU(),
+            nn.Linear(64,128))
+        self.model1 = nn.Sequential(
+            nn.Linear(n,64),
+            nn.ReLU(),
+            nn.Linear(64,128))
         self.model = nn.Sequential(
-                nn.Linear(3136,1024),
-                nn.Linear(1024,512),
+                nn.Linear(3136,2048),
+                nn.Linear(2048,1024),
                 nn.ReLU(),
-                nn.Linear(512,256))
-        self.output = nn.Linear(512,1)
+                nn.Linear(1024,512))
+        self.output = nn.Linear(512+128+128,1)
         self.n = n
         
         
@@ -51,7 +57,7 @@ class Discriminator(nn.Module):
         action_hot = action_hot.reshape(-1,self.n)
 
         img = torch.nn.functional.relu(self.Linear1(img))
-        action_hot = torch.nn.functional.relu(self.Linear2(action_hot.float()))
+        action_hot = torch.nn.functional.relu(self.model1(action_hot.float()))
         state_embeddings = torch.nn.functional.relu(self.model(state_embeddings))  
         #print(state_embeddings.shape)
         #print(action_hot.shape)
@@ -219,7 +225,7 @@ class IQNAgent(BaseAgent):
             #print(GAN_loss)
             GAN_loss.backward(retain_graph=True)
             self.discriminator_optim.step() 
-        
+        print(GAN_loss)
         
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
