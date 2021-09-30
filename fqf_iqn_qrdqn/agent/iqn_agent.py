@@ -225,7 +225,7 @@ class IQNAgent(BaseAgent):
             #print(GAN_loss)
             GAN_loss.backward(retain_graph=True)
             self.discriminator_optim.step() 
-        print(GAN_loss)
+        #print(GAN_loss)
         
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
