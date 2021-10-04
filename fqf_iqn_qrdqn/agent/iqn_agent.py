@@ -159,7 +159,8 @@ class IQNAgent(BaseAgent):
         taus = torch.rand(
             self.batch_size, self.N, dtype=state_embeddings.dtype,
             device=state_embeddings.device)
-
+        
+        
         # Calculate quantile values of current states and actions at tau_hats.
         current_sa_quantiles = evaluate_quantile_at_action(
             self.online_net.calculate_quantiles(
@@ -196,7 +197,7 @@ class IQNAgent(BaseAgent):
             # Calculate quantile values of next states and next actions.
             next_sa_quantiles = evaluate_quantile_at_action(
                 self.target_net.calculate_quantiles(
-                    tau_dashes, state_embeddings=next_state_embeddings
+                    tau, state_embeddings=next_state_embeddings
                 ), next_actions).transpose(1, 2)
             #assert next_sa_quantiles.shape == (self.batch_size, 1, self.N_dash)
         
