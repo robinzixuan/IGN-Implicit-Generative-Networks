@@ -197,7 +197,7 @@ class IQNAgent(BaseAgent):
             # Calculate quantile values of next states and next actions.
             next_sa_quantiles = evaluate_quantile_at_action(
                 self.target_net.calculate_quantiles(
-                    tau, state_embeddings=next_state_embeddings
+                    taus, state_embeddings=next_state_embeddings
                 ), next_actions).transpose(1, 2)
             #assert next_sa_quantiles.shape == (self.batch_size, 1, self.N_dash)
         
@@ -226,7 +226,7 @@ class IQNAgent(BaseAgent):
             #print(GAN_loss)
             GAN_loss.backward(retain_graph=True)
             self.discriminator_optim.step() 
-        #print(GAN_loss)
+        print(GAN_loss)
         
         for p in self.discriminator.parameters():
             p.requires_grad = False  # to avoid computation
