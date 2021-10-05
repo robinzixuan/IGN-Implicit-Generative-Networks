@@ -138,12 +138,11 @@ class IQNAgent(BaseAgent):
 
         quantile_loss, mean_q = self.calculate_loss(states,
             state_embeddings,actions, rewards, next_states, dones, weights)
-        '''
+        
         update_params(
             self.generator_optim, quantile_loss,
             networks=[self.online_net],
             retain_graph=False, grad_cliping=self.grad_cliping)
-        '''
         
         if 4*self.steps % self.log_interval == 0:
             self.writer.add_scalar(
@@ -233,10 +232,12 @@ class IQNAgent(BaseAgent):
         quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
         
         disable_gradients(self.discriminator)
+        '''
         self.online_net.zero_grad()
         Q_loss = quantile_huber_loss
         Q_loss.backward(retain_graph=True)
         self.generator_optim.step()
+        '''
         #print(Q_loss)
         return GAN_loss, current_sa_quantiles.detach().mean()
 
