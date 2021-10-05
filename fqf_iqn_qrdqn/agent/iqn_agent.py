@@ -216,7 +216,7 @@ class IQNAgent(BaseAgent):
         td_errors = target_sa_quantiles - current_sa_quantiles
         #assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
 
-        quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
+        
 
         for p in self.discriminator.parameters():
             p.requires_grad = True
@@ -229,9 +229,10 @@ class IQNAgent(BaseAgent):
             GAN_loss.backward(retain_graph=True)
             self.discriminator_optim.step() 
         #print(GAN_loss)
+
+        quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
         
-        for p in self.discriminator.parameters():
-            p.requires_grad = False  # to avoid computation
+        disable_gradients(self.discriminator)
         self.online_net.zero_grad()
         Q_loss = quantile_huber_loss
         Q_loss.backward(retain_graph=True)
