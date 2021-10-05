@@ -236,7 +236,7 @@ class IQNAgent(BaseAgent):
         Q_loss = quantile_huber_loss
         Q_loss.backward(retain_graph=True)
         self.generator_optim.step()
-        print(Q_loss)
+        #print(Q_loss)
         return GAN_loss, current_sa_quantiles.detach().mean()
 
 
