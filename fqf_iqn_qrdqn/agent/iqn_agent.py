@@ -239,7 +239,7 @@ class IQNAgent(BaseAgent):
         self.generator_optim.step()
         '''
         #print(Q_loss)
-        return GAN_loss, current_sa_quantiles.detach().mean()
+        return quantile_huber_loss, current_sa_quantiles.detach().mean()
 
 
 
