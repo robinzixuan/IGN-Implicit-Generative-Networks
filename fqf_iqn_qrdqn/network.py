@@ -181,7 +181,8 @@ class QuantileNetwork(nn.Module):
             baselines = self.baseline_net(embeddings)
             quantiles =\
                 baselines + advantages - advantages.mean(1, keepdim=True)
-
+        
+        
         return quantiles.view(batch_size, N, self.num_actions)
 
 
