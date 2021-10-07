@@ -36,15 +36,9 @@ def calculate_quantile_huber_loss(td_errors, taus, weights=None, kappa=1.0):
     assert element_wise_huber_loss.shape == (
         batch_size, N, N_dash)
 
-    # Calculate quantile huber loss element-wisely.
-    element_wise_quantile_huber_loss = torch.abs(
-        taus[..., None] - (td_errors.detach() < 0).float()
-        ) * element_wise_huber_loss / kappa
-    assert element_wise_quantile_huber_loss.shape == (
-        batch_size, N, N_dash)
-
+    
     # Quantile huber loss.
-    batch_quantile_huber_loss = element_wise_quantile_huber_loss.sum(
+    batch_quantile_huber_loss = element_wise_huber_loss.sum(
         dim=1).mean(dim=1, keepdim=True)
     assert batch_quantile_huber_loss.shape == (batch_size, 1)
 
