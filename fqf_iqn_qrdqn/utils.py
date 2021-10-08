@@ -39,7 +39,7 @@ def calculate_quantile_huber_loss(td_errors, taus, weights=None, kappa=1.0):
     
     # Quantile huber loss.
     batch_quantile_huber_loss = element_wise_huber_loss.sum(
-        dim=1).mean(dim=1, keepdim=True)
+        dim=1).sum(dim=1, keepdim=True)
     assert batch_quantile_huber_loss.shape == (batch_size, 1)
 
     if weights is not None:

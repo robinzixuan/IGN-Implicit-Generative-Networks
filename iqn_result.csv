@@ -277,9 +277,6 @@ Episode: 276   episode steps: 780   return: -21.0
 Episode: 277   episode steps: 952   return: -20.0
 Episode: 278   episode steps: 776   return: -21.0
 Episode: 279   episode steps: 828   return: -20.0
-------------------------------------------------------------
-Num steps: 250000  return: -20.6
-------------------------------------------------------------
 Episode: 280   episode steps: 818   return: -21.0
 Episode: 281   episode steps: 835   return: -21.0
 Episode: 282   episode steps: 840   return: -20.0
@@ -455,9 +452,6 @@ Episode: 451   episode steps: 2491  return: -16.0
 Episode: 452   episode steps: 1956  return: -17.0
 Episode: 453   episode steps: 2349  return: -18.0
 Episode: 454   episode steps: 2011  return: -17.0
-------------------------------------------------------------
-Num steps: 500000  return: -18.1
-------------------------------------------------------------
 Episode: 455   episode steps: 2042  return: -17.0
 Episode: 456   episode steps: 1731  return: -19.0
 Episode: 457   episode steps: 2258  return: -18.0
@@ -580,9 +574,6 @@ Episode: 573   episode steps: 2167  return: -14.0
 Episode: 574   episode steps: 1579  return: -14.0
 Episode: 575   episode steps: 2491  return: -12.0
 Episode: 576   episode steps: 2266  return: -13.0
-------------------------------------------------------------
-Num steps: 750000  return: -17.2
-------------------------------------------------------------
 Episode: 577   episode steps: 2711  return: -14.0
 Episode: 578   episode steps: 2814  return: -13.0
 Episode: 579   episode steps: 2846  return: -11.0
@@ -694,9 +685,6 @@ Episode: 684   episode steps: 1777  return: -17.0
 Episode: 685   episode steps: 3119  return: -5.0 
 Episode: 686   episode steps: 2315  return: -11.0
 Episode: 687   episode steps: 2874  return: -7.0 
-------------------------------------------------------------
-Num steps: 1000000  return: -9.2 
-------------------------------------------------------------
 Episode: 688   episode steps: 3714  return: -4.0 
 Episode: 689   episode steps: 1592  return: -19.0
 Episode: 690   episode steps: 2066  return: -18.0
@@ -796,9 +784,6 @@ Episode: 783   episode steps: 3341  return: -1.0
 Episode: 784   episode steps: 3449  return: 2.0  
 Episode: 785   episode steps: 3376  return: 3.0  
 Episode: 786   episode steps: 3356  return: -3.0 
-------------------------------------------------------------
-Num steps: 1250000  return: -7.9 
-------------------------------------------------------------
 Episode: 787   episode steps: 3552  return: 1.0  
 Episode: 788   episode steps: 3211  return: -5.0 
 Episode: 789   episode steps: 3654  return: -4.0 
@@ -884,9 +869,6 @@ Episode: 868   episode steps: 2076  return: -18.0
 Episode: 869   episode steps: 2705  return: -15.0
 Episode: 870   episode steps: 3066  return: -11.0
 Episode: 871   episode steps: 2877  return: -8.0 
-------------------------------------------------------------
-Num steps: 1500000  return: -6.3 
-------------------------------------------------------------
 Episode: 872   episode steps: 3600  return: 4.0  
 Episode: 873   episode steps: 1553  return: -16.0
 Episode: 874   episode steps: 2998  return: 6.0  
@@ -966,9 +948,6 @@ Episode: 947   episode steps: 4050  return: -7.0
 Episode: 948   episode steps: 4140  return: 3.0  
 Episode: 949   episode steps: 4104  return: 5.0  
 Episode: 950   episode steps: 3672  return: -4.0 
-------------------------------------------------------------
-Num steps: 1750000  return: -2.7 
-------------------------------------------------------------
 Episode: 951   episode steps: 4500  return: -6.0 
 Episode: 952   episode steps: 3508  return: -6.0 
 Episode: 953   episode steps: 3928  return: -6.0 
@@ -1034,9 +1013,6 @@ Episode: 1012  episode steps: 3708  return: -6.0
 Episode: 1013  episode steps: 3740  return: 9.0  
 Episode: 1014  episode steps: 3324  return: 12.0 
 Episode: 1015  episode steps: 3189  return: -7.0 
-------------------------------------------------------------
-Num steps: 2000000  return: -1.2 
-------------------------------------------------------------
 Episode: 1016  episode steps: 3889  return: 5.0  
 Episode: 1017  episode steps: 4066  return: 3.0  
 Episode: 1018  episode steps: 3063  return: -5.0 
@@ -1107,9 +1083,6 @@ Episode: 1082  episode steps: 4013  return: 2.0
 Episode: 1083  episode steps: 3080  return: -4.0 
 Episode: 1084  episode steps: 1832  return: -14.0
 Episode: 1085  episode steps: 1901  return: -13.0
-------------------------------------------------------------
-Num steps: 2250000  return: -7.5 
-------------------------------------------------------------
 Episode: 1086  episode steps: 3160  return: -5.0 
 Episode: 1087  episode steps: 2037  return: -12.0
 Episode: 1088  episode steps: 2074  return: -12.0
@@ -1186,9 +1159,6 @@ Episode: 1158  episode steps: 3267  return: 9.0
 Episode: 1159  episode steps: 4030  return: 2.0  
 Episode: 1160  episode steps: 4573  return: -3.0 
 Episode: 1161  episode steps: 2152  return: 15.0 
-------------------------------------------------------------
-Num steps: 2500000  return: 7.5  
-------------------------------------------------------------
 Episode: 1162  episode steps: 4195  return: 1.0  
 Episode: 1163  episode steps: 4460  return: 8.0  
 Episode: 1164  episode steps: 4021  return: 2.0  
@@ -1263,9 +1233,6 @@ Episode: 1232  episode steps: 2778  return: 14.0
 Episode: 1233  episode steps: 3862  return: 4.0  
 Episode: 1234  episode steps: 3263  return: 10.0 
 Episode: 1235  episode steps: 2480  return: 14.0 
-------------------------------------------------------------
-Num steps: 2750000  return: 11.1 
-------------------------------------------------------------
 Episode: 1236  episode steps: 3012  return: 10.0 
 Episode: 1237  episode steps: 3569  return: 6.0  
 Episode: 1238  episode steps: 4001  return: -4.0 
@@ -1346,9 +1313,6 @@ Episode: 1312  episode steps: 1852  return: 20.0
 Episode: 1313  episode steps: 4318  return: 7.0  
 Episode: 1314  episode steps: 3640  return: 6.0  
 Episode: 1315  episode steps: 3007  return: 15.0 
-------------------------------------------------------------
-Num steps: 3000000  return: 13.8 
-------------------------------------------------------------
 Episode: 1316  episode steps: 2089  return: 18.0 
 Episode: 1317  episode steps: 2750  return: 12.0 
 Episode: 1318  episode steps: 1951  return: 19.0 
@@ -1441,9 +1405,6 @@ Episode: 1404  episode steps: 2999  return: 17.0
 Episode: 1405  episode steps: 3251  return: 14.0 
 Episode: 1406  episode steps: 3159  return: 16.0 
 Episode: 1407  episode steps: 3711  return: 10.0 
-------------------------------------------------------------
-Num steps: 3250000  return: 15.6 
-------------------------------------------------------------
 Episode: 1408  episode steps: 3428  return: 9.0  
 Episode: 1409  episode steps: 2555  return: 14.0 
 Episode: 1410  episode steps: 2426  return: 18.0 
@@ -1541,9 +1502,6 @@ Episode: 1501  episode steps: 3075  return: 11.0
 Episode: 1502  episode steps: 2356  return: 16.0 
 Episode: 1503  episode steps: 2159  return: 20.0 
 Episode: 1504  episode steps: 2707  return: 13.0 
-------------------------------------------------------------
-Num steps: 3500000  return: 14.4 
-------------------------------------------------------------
 Episode: 1505  episode steps: 2234  return: 17.0 
 Episode: 1506  episode steps: 2648  return: 14.0 
 Episode: 1507  episode steps: 2076  return: 19.0 
@@ -1657,9 +1615,6 @@ Episode: 1614  episode steps: 2341  return: 17.0
 Episode: 1615  episode steps: 2477  return: 14.0 
 Episode: 1616  episode steps: 2440  return: 14.0 
 Episode: 1617  episode steps: 1962  return: 18.0 
-------------------------------------------------------------
-Num steps: 3750000  return: 15.3 
-------------------------------------------------------------
 Episode: 1618  episode steps: 1989  return: 18.0 
 Episode: 1619  episode steps: 2114  return: 16.0 
 Episode: 1620  episode steps: 2094  return: 18.0 
