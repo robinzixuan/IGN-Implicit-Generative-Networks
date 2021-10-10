@@ -1,72 +1,10 @@
 import torch
 from torch.optim import Adam
-import torch.nn as nn
-
-import numpy as np
 
 from fqf_iqn_qrdqn.model import IQN
 from fqf_iqn_qrdqn.utils import calculate_quantile_huber_loss, disable_gradients, evaluate_quantile_at_action, update_params
 
 from .base_agent import BaseAgent
-import torch.optim as optim
-
-from torch.autograd import Variable
-from torch import autograd
-from fqf_iqn_qrdqn.network import DQNBase
-
-
-
-
-
-
-
-class Discriminator(nn.Module):
-    def __init__(self, num_channels, n):
-        super(Discriminator, self).__init__()
-        self.dqn_net = DQNBase(num_channels=num_channels)
-        self.model2 = nn.Sequential(
-            nn.Linear(1,64),
-            nn.LeakyReLU(),
-            nn.Linear(64,128))
-        self.model1 = nn.Sequential(
-            nn.Linear(n,64),
-            nn.LeakyReLU(),
-            nn.Linear(64,128))
-        self.model = nn.Sequential(
-                nn.Linear(3136,2048),
-                nn.Linear(2048,1024),
-                nn.LeakyReLU(),
-                nn.Linear(1024,512))
-        self.output = nn.Linear(512+128+128,1)
-        self.n = n
-        
-        
-
-        
-    def forward(self, img, states = None, action = None):
-        #img_flat = img.view(img.shape[0], -1)
-        batch_size = states.shape[0]
-        action = torch.unsqueeze(action, dim=1).repeat(1, 64, 1)
-        action= action.reshape(batch_size * 64, *action.shape[2:])
-        states = torch.unsqueeze(states, dim=1).repeat(1, 64, 1, 1, 1)
-        states = states.reshape(batch_size * 64, *states.shape[2:])
-        state_embeddings = self.dqn_net(states)
-        img = img.reshape(batch_size * 64, *img.shape[2:])  #torch.Size([2048, 1])
-        
-        action_hot = torch.nn.functional.one_hot(action, num_classes = self.n)
-        action_hot = action_hot.reshape(-1,self.n)
-
-        img = torch.nn.functional.relu(self.model2(img))
-        action_hot = torch.nn.functional.relu(self.model1(action_hot.float()))
-        state_embeddings = torch.nn.functional.relu(self.model(state_embeddings))  
-        #print(state_embeddings.shape)
-        #print(action_hot.shape)
-        #print(img.shape)
-        concat = torch.cat((img, state_embeddings, action_hot), 1)
-        validity = self.output(concat)
-        
-        return validity
-
 
 
 class IQNAgent(BaseAgent):
@@ -93,31 +31,27 @@ class IQNAgent(BaseAgent):
         self.online_net = IQN(
             num_channels=env.observation_space.shape[0],
             num_actions=self.num_actions, K=K, num_cosines=num_cosines,
-            dueling_net=dueling_net, noisy_net=noisy_net).to(self.device)   #generator
+            dueling_net=dueling_net, noisy_net=noisy_net).to(self.device)
         # Target network.
         self.target_net = IQN(
             num_channels=env.observation_space.shape[0],
             num_actions=self.num_actions, K=K, num_cosines=num_cosines,
             dueling_net=dueling_net, noisy_net=noisy_net).to(self.device)
 
-        self.discriminator = Discriminator(num_channels=env.observation_space.shape[0], n = env.action_space.n).to(self.device)
-
         # Copy parameters of the learning network to the target network.
         self.update_target()
         # Disable calculations of gradients of the target network.
         disable_gradients(self.target_net)
 
-        
+        self.optim = Adam(
+            self.online_net.parameters(),
+            lr=lr, eps=1e-2/batch_size)
+
         self.N = N
         self.N_dash = N_dash
         self.K = K
         self.num_cosines = num_cosines
         self.kappa = kappa
-        self.lr = lr
-        self.n_critic = 5
-        self.gamma = gamma
-        self.discriminator_optim = optim.Adam(self.discriminator.parameters(), lr=self.lr * 3)
-        self.generator_optim = optim.Adam(self.online_net.parameters(),lr=self.lr)
 
     def learn(self):
         self.learning_steps += 1
@@ -132,39 +66,41 @@ class IQNAgent(BaseAgent):
                 self.memory.sample(self.batch_size)
             weights = None
 
-        #print(self.memory.sample)
         # Calculate features of states.
         state_embeddings = self.online_net.calculate_state_embeddings(states)
 
-        quantile_loss, mean_q = self.calculate_loss(states,
-            state_embeddings,actions, rewards, next_states, dones, weights)
-        
+        quantile_loss, mean_q, errors = self.calculate_loss(
+            state_embeddings, actions, rewards, next_states, dones, weights)
+        assert errors.shape == (self.batch_size, 1)
+
         update_params(
-            self.generator_optim, quantile_loss,
+            self.optim, quantile_loss,
             networks=[self.online_net],
             retain_graph=False, grad_cliping=self.grad_cliping)
-        
+
+        if self.use_per:
+            self.memory.update_priority(errors)
+
         if 4*self.steps % self.log_interval == 0:
             self.writer.add_scalar(
                 'loss/quantile_loss', quantile_loss.detach().item(),
                 4*self.steps)
             self.writer.add_scalar('stats/mean_Q', mean_q, 4*self.steps)
-        
 
-    def calculate_loss(self, states, state_embeddings, actions, rewards, next_states,
-                       dones, weights, lamda  = 10):
-        
-        self.lamda = lamda
+    def calculate_loss(self, state_embeddings, actions, rewards, next_states,
+                       dones, weights):
+        # Sample fractions.
         taus = torch.rand(
             self.batch_size, self.N, dtype=state_embeddings.dtype,
             device=state_embeddings.device)
-        
-        
+
         # Calculate quantile values of current states and actions at tau_hats.
         current_sa_quantiles = evaluate_quantile_at_action(
             self.online_net.calculate_quantiles(
-                taus, state_embeddings=state_embeddings), actions)
-        
+                taus, state_embeddings=state_embeddings),
+            actions)
+        assert current_sa_quantiles.shape == (
+            self.batch_size, self.N, 1)
 
         with torch.no_grad():
             # Calculate Q values of next states.
@@ -179,8 +115,8 @@ class IQNAgent(BaseAgent):
                 next_q = self.target_net.calculate_q(
                     state_embeddings=next_state_embeddings)
 
-            #greedy 
-            next_actions =  torch.argmax(next_q, dim=1, keepdim=True)
+            # Calculate greedy actions.
+            next_actions = torch.argmax(next_q, dim=1, keepdim=True)
             assert next_actions.shape == (self.batch_size, 1)
 
             # Calculate features of next states.
@@ -198,49 +134,19 @@ class IQNAgent(BaseAgent):
                 self.target_net.calculate_quantiles(
                     tau_dashes, state_embeddings=next_state_embeddings
                 ), next_actions).transpose(1, 2)
-            #assert next_sa_quantiles.shape == (self.batch_size, 1, self.N_dash)
-        
+            assert next_sa_quantiles.shape == (self.batch_size, 1, self.N_dash)
+
+            # Calculate target quantile values.
             target_sa_quantiles = rewards[..., None] + (
                 1.0 - dones[..., None]) * self.gamma_n * next_sa_quantiles
+            assert target_sa_quantiles.shape == (
+                self.batch_size, 1, self.N_dash)
 
-
-        target_sa_quantiles=target_sa_quantiles[:,torch.randperm(target_sa_quantiles.size(1))].reshape((self.batch_size, self.N, 1))
-        current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))]
-        assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
-        #assert target_sa_quantiles.shape == (self.batch_size, 1,self.N)
-        
-
-        current_sa_quantiles_d = self.discriminator(current_sa_quantiles, states, actions)
-        target_sa_quantiles_d = self.discriminator(target_sa_quantiles,states, actions)
         td_errors = target_sa_quantiles - current_sa_quantiles
-        #assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
+        assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
 
-        
+        quantile_huber_loss = calculate_quantile_huber_loss(
+            td_errors, taus, weights, self.kappa)
 
-        for p in self.discriminator.parameters():
-            p.requires_grad = True
-        
-        torch.autograd.set_detect_anomaly(True)
-        for i in range(self.n_critic):
-            self.discriminator.zero_grad()
-            GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().type(torch.FloatTensor)
-            #print(GAN_loss)
-            GAN_loss.backward(retain_graph=True)
-            self.discriminator_optim.step() 
-        #print(GAN_loss)
-
-        quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
-        
-        disable_gradients(self.discriminator)
-        '''
-        self.online_net.zero_grad()
-        Q_loss = quantile_huber_loss
-        Q_loss.backward(retain_graph=True)
-        self.generator_optim.step()
-        '''
-        #print(Q_loss)
-        return quantile_huber_loss, current_sa_quantiles.detach().mean()
-
-
-
-
+        return quantile_huber_loss, next_q.detach().mean().item(), \
+            td_errors.detach().abs().sum(dim=1).mean(dim=1, keepdim=True)
