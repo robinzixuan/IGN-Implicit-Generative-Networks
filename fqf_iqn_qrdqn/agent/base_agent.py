@@ -1,249 +1,250 @@
-import torch
-from torch.optim import Adam
-import torch.nn as nn
-
+from abc import ABC, abstractmethod
+import os
 import numpy as np
+import torch
+from torch.utils.tensorboard import SummaryWriter
 
-from fqf_iqn_qrdqn.model import IQN
-from fqf_iqn_qrdqn.utils import calculate_quantile_huber_loss, disable_gradients, evaluate_quantile_at_action, update_params
-
-from .base_agent import BaseAgent
-import torch.optim as optim
-
-from torch.autograd import Variable
-from torch import autograd
-from fqf_iqn_qrdqn.network import DQNBase
+from fqf_iqn_qrdqn.memory import LazyMultiStepMemory, \
+    LazyPrioritizedMultiStepMemory
+from fqf_iqn_qrdqn.utils import RunningMeanStats, LinearAnneaer
 
 
-
-
-
-
-
-class Discriminator(nn.Module):
-    def __init__(self, num_channels, n):
-        super(Discriminator, self).__init__()
-        self.dqn_net = DQNBase(num_channels=num_channels)
-        self.model2 = nn.Sequential(
-            nn.Linear(1,64),
-            nn.LeakyReLU(),
-            nn.Linear(64,128),
-            nn.ReLU())
-        self.model1 = nn.Sequential(
-            nn.Linear(n,64),
-            nn.LeakyReLU(),
-            nn.Linear(64,128),
-            nn.ReLU())
-        self.model = nn.Sequential(
-                nn.Linear(3136,1024),
-                nn.LeakyReLU(),
-                nn.Linear(1024,512),
-                nn.ReLU())
-        self.output = nn.Linear(512+128+128,1)
-        self.n = n
-        
-        
-
-        
-    def forward(self, Q, states = None, action = None):
-        batch_size = states.shape[0]
-        action = torch.unsqueeze(action, dim=1).repeat(1, 64, 1)
-        action= action.reshape(batch_size * 64, *action.shape[2:])
-        states = torch.unsqueeze(states, dim=1).repeat(1, 64, 1, 1, 1)
-        states = states.reshape(batch_size * 64, *states.shape[2:])
-        state_embeddings = self.dqn_net(states)
-        Q = Q.reshape(batch_size * 64, *Q.shape[2:])  #torch.Size([2048, 1])
-        
-        action_hot = torch.nn.functional.one_hot(action, num_classes = self.n)
-        action_hot = action_hot.reshape(-1,self.n)
-
-        Q = torch.nn.functional.relu(self.model2(Q))
-        action_hot = torch.nn.functional.relu(self.model1(action_hot.float()))
-        state_embeddings = torch.nn.functional.relu(self.model(state_embeddings))  
-        #print(state_embeddings.shape)
-        #print(action_hot.shape)
-        #print(Q.shape)
-        concat = torch.cat((Q, state_embeddings, action_hot), 1)
-        validity = self.output(concat)
-        
-        return validity
-
-
-
-class IQNAgent(BaseAgent):
+class BaseAgent(ABC):
 
     def __init__(self, env, test_env, log_dir, num_steps=5*(10**7),
-                 batch_size=32, N=64, N_dash=64, K=32, num_cosines=64,
-                 kappa=1.0, lr=5e-5, memory_size=10**6, gamma=0.99,
-                 multi_step=1, update_interval=4, target_update_interval=10000,
+                 batch_size=32, memory_size=10**6, gamma=0.99, multi_step=1,
+                 update_interval=4, target_update_interval=10000,
                  start_steps=50000, epsilon_train=0.01, epsilon_eval=0.001,
                  epsilon_decay_steps=250000, double_q_learning=False,
                  dueling_net=False, noisy_net=False, use_per=False,
                  log_interval=100, eval_interval=250000, num_eval_steps=125000,
-                 max_episode_steps=27000, grad_cliping=None, cuda=True,
-                 seed=0):
-        super(IQNAgent, self).__init__(
-            env, test_env, log_dir, num_steps, batch_size, memory_size,
-            gamma, multi_step, update_interval, target_update_interval,
-            start_steps, epsilon_train, epsilon_eval, epsilon_decay_steps,
-            double_q_learning, dueling_net, noisy_net, use_per, log_interval,
-            eval_interval, num_eval_steps, max_episode_steps, grad_cliping,
-            cuda, seed)
+                 max_episode_steps=27000, grad_cliping=5.0, cuda=True, seed=0):
 
-        # Online network.
-        self.online_net = IQN(
-            num_channels=env.observation_space.shape[0],
-            num_actions=self.num_actions, K=K, num_cosines=num_cosines,
-            dueling_net=dueling_net, noisy_net=noisy_net).to(self.device)   #generator
-        # Target network.
-        self.target_net = IQN(
-            num_channels=env.observation_space.shape[0],
-            num_actions=self.num_actions, K=K, num_cosines=num_cosines,
-            dueling_net=dueling_net, noisy_net=noisy_net).to(self.device)
+        self.env = env
+        self.test_env = test_env
 
-        self.discriminator = Discriminator(num_channels=env.observation_space.shape[0], n = env.action_space.n).to(self.device)
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        self.env.seed(seed)
+        self.test_env.seed(2**31-1-seed)
+        # torch.backends.cudnn.deterministic = True  # It harms a performance.
+        # torch.backends.cudnn.benchmark = False  # It harms a performance.
 
-        # Copy parameters of the learning network to the target network.
-        self.update_target()
-        # Disable calculations of gradients of the target network.
-        disable_gradients(self.target_net)
+        self.device = torch.device(
+            "cuda" if cuda and torch.cuda.is_available() else "cpu")
 
-        
-        self.N = N
-        self.N_dash = N_dash
-        self.K = K
-        self.num_cosines = num_cosines
-        self.kappa = kappa
-        self.lr = lr
-        self.n_critic = 5
-        self.gamma = gamma
-        self.discriminator_optim = optim.Adam(self.discriminator.parameters(), lr=self.lr * 3)
-        self.generator_optim = optim.Adam(self.online_net.parameters(),lr=self.lr)
+        self.online_net = None
+        self.target_net = None
 
-    def learn(self):
-        self.learning_steps += 1
-        self.online_net.sample_noise()
-        self.target_net.sample_noise()
-
-        if self.use_per:
-            (states, actions, rewards, next_states, dones), weights =\
-                self.memory.sample(self.batch_size)
+        # Replay memory which is memory-efficient to store stacked frames.
+        if use_per:
+            beta_steps = (num_steps - start_steps) / update_interval
+            self.memory = LazyPrioritizedMultiStepMemory(
+                memory_size, self.env.observation_space.shape,
+                self.device, gamma, multi_step, beta_steps=beta_steps)
         else:
-            states, actions, rewards, next_states, dones =\
-                self.memory.sample(self.batch_size)
-            weights = None
+            self.memory = LazyMultiStepMemory(
+                memory_size, self.env.observation_space.shape,
+                self.device, gamma, multi_step)
 
-        #print(self.memory.sample)
-        # Calculate features of states.
-        state_embeddings = self.online_net.calculate_state_embeddings(states)
+        self.log_dir = log_dir
+        self.model_dir = os.path.join(log_dir, 'model')
+        self.summary_dir = os.path.join(log_dir, 'summary')
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
+        if not os.path.exists(self.summary_dir):
+            os.makedirs(self.summary_dir)
 
-        quantile_loss, mean_q = self.calculate_loss(states,
-            state_embeddings,actions, rewards, next_states, dones, weights)
-        
-        update_params(
-            self.generator_optim, quantile_loss,
-            networks=[self.online_net],
-            retain_graph=False, grad_cliping=self.grad_cliping)
-        
-        if 4*self.steps % self.log_interval == 0:
-            self.writer.add_scalar(
-                'loss/quantile_loss', quantile_loss.detach().item(),
-                4*self.steps)
-            self.writer.add_scalar('stats/mean_Q', mean_q, 4*self.steps)
-        
+        self.writer = SummaryWriter(log_dir=self.summary_dir)
+        self.train_return = RunningMeanStats(log_interval)
 
-    def calculate_loss(self, states, state_embeddings, actions, rewards, next_states,
-                       dones, weights, lamda  = 10):
-        
-        self.lamda = lamda
-        taus = torch.rand(
-            self.batch_size, self.N, dtype=state_embeddings.dtype,
-            device=state_embeddings.device)
-        
-        
-        # Calculate quantile values of current states and actions at tau_hats.
-        current_sa_quantiles = evaluate_quantile_at_action(
-            self.online_net.calculate_quantiles(
-                taus, state_embeddings=state_embeddings), actions)
-        
+        self.steps = 0
+        self.learning_steps = 0
+        self.episodes = 0
+        self.best_eval_score = -np.inf
+        self.num_actions = self.env.action_space.n
+        self.num_steps = num_steps
+        self.batch_size = batch_size
 
+        self.double_q_learning = double_q_learning
+        self.dueling_net = dueling_net
+        self.noisy_net = noisy_net
+        self.use_per = use_per
+
+        self.log_interval = log_interval
+        self.eval_interval = eval_interval
+        self.num_eval_steps = num_eval_steps
+        self.gamma_n = gamma ** multi_step
+        self.start_steps = start_steps
+        self.epsilon_train = LinearAnneaer(
+            1.0, epsilon_train, epsilon_decay_steps)
+        self.epsilon_eval = epsilon_eval
+        self.update_interval = update_interval
+        self.target_update_interval = target_update_interval
+        self.max_episode_steps = max_episode_steps
+        self.grad_cliping = grad_cliping
+
+    def run(self):
+        while True:
+            self.train_episode()
+            if self.steps > self.num_steps:
+                break
+
+    def is_update(self):
+        return self.steps % self.update_interval == 0\
+            and self.steps >= self.start_steps
+
+    def is_random(self, eval=False):
+        # Use e-greedy for evaluation.
+        if self.steps < self.start_steps:
+            return True
+        if eval:
+            return np.random.rand() < self.epsilon_eval
+        if self.noisy_net:
+            return False
+        return np.random.rand() < self.epsilon_train.get()
+
+    def update_target(self):
+        self.target_net.load_state_dict(
+            self.online_net.state_dict())
+
+    def explore(self):
+        # Act with randomness.
+        action = self.env.action_space.sample()
+        return action
+
+    def exploit(self, state):
+        # Act without randomness.
+        state = torch.ByteTensor(
+            state).unsqueeze(0).to(self.device).float() / 255.
         with torch.no_grad():
-            # Calculate Q values of next states.
-            if self.double_q_learning:
-                # Sample the noise of online network to decorrelate between
-                # the action selection and the quantile calculation.
-                self.online_net.sample_noise()
-                next_q = self.online_net.calculate_q(states=next_states)
+            action = self.online_net.calculate_q(states=state).argmax().item()
+        return action
+
+    @abstractmethod
+    def learn(self):
+        pass
+
+    def save_models(self, save_dir):
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        torch.save(
+            self.online_net.state_dict(),
+            os.path.join(save_dir, 'online_net.pth'))
+        torch.save(
+            self.target_net.state_dict(),
+            os.path.join(save_dir, 'target_net.pth'))
+
+    def load_models(self, save_dir):
+        self.online_net.load_state_dict(torch.load(
+            os.path.join(save_dir, 'online_net.pth')))
+        self.target_net.load_state_dict(torch.load(
+            os.path.join(save_dir, 'target_net.pth')))
+
+    def train_episode(self):
+        self.online_net.train()
+        self.target_net.train()
+
+        self.episodes += 1
+        episode_return = 0.
+        episode_steps = 0
+
+        done = False
+        state = self.env.reset()
+
+        while (not done) and episode_steps <= self.max_episode_steps:
+            # NOTE: Noises can be sampled only after self.learn(). However, I
+            # sample noises before every action, which seems to lead better
+            # performances.
+            self.online_net.sample_noise()
+
+            if self.is_random(eval=False):
+                action = self.explore()
             else:
-                next_state_embeddings =\
-                    self.target_net.calculate_state_embeddings(next_states)
-                next_q = self.target_net.calculate_q(
-                    state_embeddings=next_state_embeddings)
+                action = self.exploit(state)
 
-            #greedy 
-            next_actions =  torch.argmax(next_q, dim=1, keepdim=True)
-            assert next_actions.shape == (self.batch_size, 1)
+            next_state, reward, done, _ = self.env.step(action)
 
-            # Calculate features of next states.
-            if self.double_q_learning:
-                next_state_embeddings =\
-                    self.target_net.calculate_state_embeddings(next_states)
+            # To calculate efficiently, I just set priority=max_priority here.
+            self.memory.append(state, action, reward, next_state, done)
 
-            # Sample next fractions.
-            tau_dashes = torch.rand(
-                self.batch_size, self.N_dash, dtype=state_embeddings.dtype,
-                device=state_embeddings.device)
+            self.steps += 1
+            episode_steps += 1
+            episode_return += reward
+            state = next_state
 
-            # Calculate quantile values of next states and next actions.
-            next_sa_quantiles = evaluate_quantile_at_action(
-                self.target_net.calculate_quantiles(
-                    tau_dashes, state_embeddings=next_state_embeddings
-                ), next_actions).transpose(1, 2)
-            #assert next_sa_quantiles.shape == (self.batch_size, 1, self.N_dash)
-        
-            target_sa_quantiles = rewards[..., None] + (
-                1.0 - dones[..., None]) * self.gamma_n * next_sa_quantiles
+            self.train_step_interval()
 
+        # We log running mean of stats.
+        self.train_return.append(episode_return)
 
-        target_sa_quantiles=target_sa_quantiles[:,torch.randperm(target_sa_quantiles.size(1))].reshape((self.batch_size, self.N, 1))
-        current_sa_quantiles = current_sa_quantiles[:,torch.randperm(current_sa_quantiles.size(1))]
-        assert current_sa_quantiles.shape == (self.batch_size, self.N, 1)
-        #assert target_sa_quantiles.shape == (self.batch_size, 1,self.N)
-        
+        # We log evaluation results along with training frames = 4 * steps.
+        if self.episodes % self.log_interval == 0:
+            self.writer.add_scalar(
+                'return/train', self.train_return.get(), 4 * self.steps)
 
-        current_sa_quantiles_d = self.discriminator(current_sa_quantiles, states, actions)
-        target_sa_quantiles_d = self.discriminator(target_sa_quantiles,states, actions)
-        td_errors = target_sa_quantiles - current_sa_quantiles
-        #assert td_errors.shape == (self.batch_size, self.N, self.N_dash)
-        
-        
+        print(f'Episode: {self.episodes:<4}  '
+              f'episode steps: {episode_steps:<4}  '
+              f'return: {episode_return:<5.1f}')
 
-        for p in self.discriminator.parameters():
-            p.requires_grad = True
-        
-        torch.autograd.set_detect_anomaly(True)
-        for i in range(self.n_critic):
-            self.discriminator.zero_grad()
-            GAN_loss = (current_sa_quantiles_d.mean() - target_sa_quantiles_d.mean()).type(torch.FloatTensor)
-            #print(GAN_loss)
-            GAN_loss.backward(retain_graph=True)
-            self.discriminator_optim.step() 
-        #print(GAN_loss)
+    def train_step_interval(self):
+        self.epsilon_train.step()
 
-        #quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
-        
-        disable_gradients(self.discriminator)
-        Q_loss = -torch.mean(current_sa_quantiles_d)
+        if self.steps % self.target_update_interval == 0:
+            self.update_target()
 
-        '''
-        self.online_net.zero_grad()
-        Q_loss = quantile_huber_loss
-        Q_loss.backward(retain_graph=True)
-        self.generator_optim.step()
-        '''
-        #print(Q_loss)
-        return Q_loss, current_sa_quantiles.detach().mean()
+        if self.is_update():
+            self.learn()
 
+        if self.steps % self.eval_interval == 0:
+            self.evaluate()
+            self.save_models(os.path.join(self.model_dir, 'final'))
+            self.online_net.train()
 
+    def evaluate(self):
+        self.online_net.eval()
+        num_episodes = 0
+        num_steps = 0
+        total_return = 0.0
 
+        while True:
+            state = self.test_env.reset()
+            episode_steps = 0
+            episode_return = 0.0
+            done = False
+            while (not done) and episode_steps <= self.max_episode_steps:
+                if self.is_random(eval=True):
+                    action = self.explore()
+                else:
+                    action = self.exploit(state)
 
+                next_state, reward, done, _ = self.test_env.step(action)
+                num_steps += 1
+                episode_steps += 1
+                episode_return += reward
+                state = next_state
+
+            num_episodes += 1
+            total_return += episode_return
+
+            if num_steps > self.num_eval_steps:
+                break
+
+        mean_return = total_return / num_episodes
+
+        if mean_return > self.best_eval_score:
+            self.best_eval_score = mean_return
+            self.save_models(os.path.join(self.model_dir, 'best'))
+
+        # We log evaluation results along with training frames = 4 * steps.
+        self.writer.add_scalar(
+            'return/test', mean_return, 4 * self.steps)
+        print('-' * 60)
+        print(f'Num steps: {self.steps:<5}  '
+              f'return: {mean_return:<5.1f}')
+        print('-' * 60)
+
+    def __del__(self):
+        self.env.close()
+        self.test_env.close()
+        self.writer.close()
