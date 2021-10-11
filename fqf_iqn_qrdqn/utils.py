@@ -29,11 +29,11 @@ def calculate_quantile_huber_loss(td_errors, taus, weights=None, kappa=1.0):
     batch_size, N, N_dash = td_errors.shape
 
     # Calculate huber loss element-wisely.
-    '''
+    
     element_wise_huber_loss = calculate_huber_loss(td_errors, kappa)
     assert element_wise_huber_loss.shape == (
         batch_size, N, N_dash)
-    '''
+    
     
     # Quantile huber loss.
     batch_quantile_huber_loss = element_wise_huber_loss.sum(
