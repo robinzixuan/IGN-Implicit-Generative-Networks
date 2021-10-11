@@ -27,42 +27,43 @@ class Discriminator(nn.Module):
         self.model2 = nn.Sequential(
             nn.Linear(1,64),
             nn.LeakyReLU(),
-            nn.Linear(64,128))
+            nn.Linear(64,128),
+            nn.ReLU())
         self.model1 = nn.Sequential(
             nn.Linear(n,64),
             nn.LeakyReLU(),
-            nn.Linear(64,128))
+            nn.Linear(64,128),
+            nn.ReLU())
         self.model = nn.Sequential(
-                nn.Linear(3136,2048),
-                nn.Linear(2048,1024),
+                nn.Linear(3136,1024),
                 nn.LeakyReLU(),
-                nn.Linear(1024,512))
+                nn.Linear(1024,512),
+                nn.ReLU())
         self.output = nn.Linear(512+128+128,1)
         self.n = n
         
         
 
         
-    def forward(self, img, states = None, action = None):
-        #img_flat = img.view(img.shape[0], -1)
+    def forward(self, Q, states = None, action = None):
         batch_size = states.shape[0]
         action = torch.unsqueeze(action, dim=1).repeat(1, 64, 1)
         action= action.reshape(batch_size * 64, *action.shape[2:])
         states = torch.unsqueeze(states, dim=1).repeat(1, 64, 1, 1, 1)
         states = states.reshape(batch_size * 64, *states.shape[2:])
         state_embeddings = self.dqn_net(states)
-        img = img.reshape(batch_size * 64, *img.shape[2:])  #torch.Size([2048, 1])
+        Q = Q.reshape(batch_size * 64, *Q.shape[2:])  #torch.Size([2048, 1])
         
         action_hot = torch.nn.functional.one_hot(action, num_classes = self.n)
         action_hot = action_hot.reshape(-1,self.n)
 
-        img = torch.nn.functional.relu(self.model2(img))
+        Q = torch.nn.functional.relu(self.model2(Q))
         action_hot = torch.nn.functional.relu(self.model1(action_hot.float()))
         state_embeddings = torch.nn.functional.relu(self.model(state_embeddings))  
         #print(state_embeddings.shape)
         #print(action_hot.shape)
-        #print(img.shape)
-        concat = torch.cat((img, state_embeddings, action_hot), 1)
+        #print(Q.shape)
+        concat = torch.cat((Q, state_embeddings, action_hot), 1)
         validity = self.output(concat)
         
         return validity
@@ -223,15 +224,17 @@ class IQNAgent(BaseAgent):
         torch.autograd.set_detect_anomaly(True)
         for i in range(self.n_critic):
             self.discriminator.zero_grad()
-            GAN_loss = (current_sa_quantiles_d - target_sa_quantiles_d).mean().type(torch.FloatTensor)
+            GAN_loss = (current_sa_quantiles_d.mean() - target_sa_quantiles_d.mean()).type(torch.FloatTensor)
             #print(GAN_loss)
             GAN_loss.backward(retain_graph=True)
             self.discriminator_optim.step() 
         #print(GAN_loss)
 
-        quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
+        #quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
         
         disable_gradients(self.discriminator)
+        Q_loss = -torch.mean(current_sa_quantiles_d)
+
         '''
         self.online_net.zero_grad()
         Q_loss = quantile_huber_loss
@@ -239,7 +242,7 @@ class IQNAgent(BaseAgent):
         self.generator_optim.step()
         '''
         #print(Q_loss)
-        return quantile_huber_loss, current_sa_quantiles.detach().mean()
+        return Q_loss, current_sa_quantiles.detach().mean()
 
 
 
