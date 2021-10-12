@@ -230,10 +230,10 @@ class IQNAgent(BaseAgent):
             self.discriminator_optim.step() 
         #print(GAN_loss)
 
-        #quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
+        quantile_huber_loss = calculate_quantile_huber_loss(td_errors, taus, weights, self.kappa)
         
         disable_gradients(self.discriminator)
-        Q_loss = -torch.mean(current_sa_quantiles_d)
+        #Q_loss = -torch.mean(current_sa_quantiles_d)
 
         '''
         self.online_net.zero_grad()
@@ -242,7 +242,7 @@ class IQNAgent(BaseAgent):
         self.generator_optim.step()
         '''
         #print(Q_loss)
-        return Q_loss, current_sa_quantiles.detach().mean()
+        return quantile_huber_loss, current_sa_quantiles.detach().mean()
 
 
 

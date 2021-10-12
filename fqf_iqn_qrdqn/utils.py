@@ -21,7 +21,10 @@ def disable_gradients(network):
 
 
 def calculate_huber_loss(td_errors, kappa=1.0):
-    return td_errors.abs()
+    return torch.where(
+        td_errors.abs() <= kappa,
+        0.5 * td_errors.pow(2),
+        kappa * (td_errors.abs() - 0.5 * kappa))
 
 
 def calculate_quantile_huber_loss(td_errors, taus, weights=None, kappa=1.0):
