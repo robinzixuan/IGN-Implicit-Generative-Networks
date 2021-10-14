@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import numpy as np
 import torch
+from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 
 from fqf_iqn_qrdqn.memory import LazyMultiStepMemory, \
@@ -17,7 +18,7 @@ class BaseAgent(ABC):
                  start_steps=50000, epsilon_train=0.01, epsilon_eval=0.001,
                  epsilon_decay_steps=250000, double_q_learning=False,
                  dueling_net=False, noisy_net=False, use_per=False,
-                 log_interval=100, eval_interval=250000, num_eval_steps=125000,
+                 log_interval=100, eval_interval=250000, num_eval_steps=125000, save_interval = 50000,
                  max_episode_steps=27000, grad_cliping=5.0, cuda=True, seed=0):
 
         self.env = env
@@ -74,6 +75,7 @@ class BaseAgent(ABC):
         self.log_interval = log_interval
         self.eval_interval = eval_interval
         self.num_eval_steps = num_eval_steps
+        self.save_interval = save_interval
         self.gamma_n = gamma ** multi_step
         self.start_steps = start_steps
         self.epsilon_train = LinearAnneaer(
@@ -199,6 +201,12 @@ class BaseAgent(ABC):
         if self.steps % self.eval_interval == 0:
             self.evaluate()
             self.save_models(os.path.join(self.model_dir, 'final'))
+            self.online_net.train()
+
+        if self.step % self.save_interval == 0:
+            self.evaluate()
+            time = datetime.now().strftime("%Y%m%d-%H%M")
+            self.save_models(os.path.join(self.model_dir, 'saved/' + time ))
             self.online_net.train()
 
     def evaluate(self):
