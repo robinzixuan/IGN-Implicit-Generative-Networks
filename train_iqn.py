@@ -23,9 +23,19 @@ def run(args):
         'logs', args.env_id, f'{name}-seed{args.seed}-{time}')
 
     # Create the agent and run.
-    agent = IQNAgent(
+    agent_temp =  IQNAgent(
         env=env, test_env=test_env, log_dir=log_dir, seed=args.seed,
         cuda=args.cuda, **config)
+    model_dir = os.path.join(log_dir, 'model/saved')
+    for root, directories, files in os.walk(model_dir):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+    if os.path.exists(filepath):
+        agent_temp.load_models(filepath)
+    agent = IQNAgent(
+        env=env, test_env=test_env, log_dir=log_dir, seed=args.seed,
+        cuda=args.cuda, agent = agent_temp, **config)
+    
     agent.run()
 
 

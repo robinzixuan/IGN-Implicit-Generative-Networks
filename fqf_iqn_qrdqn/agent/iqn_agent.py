@@ -81,7 +81,7 @@ class IQNAgent(BaseAgent):
                  dueling_net=False, noisy_net=False, use_per=False,
                  log_interval=100, eval_interval=250000, num_eval_steps=125000,
                  max_episode_steps=27000, grad_cliping=None, cuda=True,
-                 seed=0):
+                 seed=0, agent = None):
         super(IQNAgent, self).__init__(
             env, test_env, log_dir, num_steps, batch_size, memory_size,
             gamma, multi_step, update_interval, target_update_interval,
@@ -119,6 +119,7 @@ class IQNAgent(BaseAgent):
         self.gamma = gamma
         self.discriminator_optim = optim.Adam(self.discriminator.parameters(), lr=self.lr * 3)
         self.generator_optim = optim.Adam(self.online_net.parameters(),lr=self.lr)
+        self.agent = agent
 
     def learn(self):
         self.learning_steps += 1
@@ -173,15 +174,15 @@ class IQNAgent(BaseAgent):
                 # Sample the noise of online network to decorrelate between
                 # the action selection and the quantile calculation.
                 self.online_net.sample_noise()
-                next_q = self.online_net.calculate_q(states=next_states)
+                next_q = self.agent.online_net.calculate_q(states=next_states)
             else:
                 next_state_embeddings =\
                     self.target_net.calculate_state_embeddings(next_states)
-                next_q = self.target_net.calculate_q(
+                next_q = self.agent.target_net.calculate_q(
                     state_embeddings=next_state_embeddings)
 
             #greedy 
-            next_actions =  torch.argmax(next_q, dim=1, keepdim=True)
+            next_actions =  self.exploit(next_states)
             assert next_actions.shape == (self.batch_size, 1)
 
             # Calculate features of next states.

@@ -19,7 +19,7 @@ class BaseAgent(ABC):
                  epsilon_decay_steps=250000, double_q_learning=False,
                  dueling_net=False, noisy_net=False, use_per=False,
                  log_interval=100, eval_interval=250000, num_eval_steps=125000, save_interval = 50000,
-                 max_episode_steps=27000, grad_cliping=5.0, cuda=True, seed=0):
+                 max_episode_steps=27000, grad_cliping=5.0, cuda=True, seed=0, agent = None):
 
         self.env = env
         self.test_env = test_env
@@ -85,6 +85,7 @@ class BaseAgent(ABC):
         self.target_update_interval = target_update_interval
         self.max_episode_steps = max_episode_steps
         self.grad_cliping = grad_cliping
+        self.agent = agent
 
     def run(self):
         while True:
@@ -120,7 +121,7 @@ class BaseAgent(ABC):
         state = torch.ByteTensor(
             state).unsqueeze(0).to(self.device).float() / 255.
         with torch.no_grad():
-            action = self.online_net.calculate_q(states=state).argmax().item()
+            action = self.agent.online_net.calculate_q(states=state).argmax().item()
         return action
 
     @abstractmethod
