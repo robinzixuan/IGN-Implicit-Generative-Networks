@@ -30,7 +30,7 @@ def run(args):
     for root, directories, files in os.walk(model_dir):
         for filename in files:
             filepath = os.path.join(root, filename)
-    if os.path.exists(filepath):
+    if filepath and os.path.exists(filepath):
         agent_temp.load_models(filepath)
     agent = IQNAgent(
         env=env, test_env=test_env, log_dir=log_dir, seed=args.seed,
