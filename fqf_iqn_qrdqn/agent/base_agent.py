@@ -121,7 +121,10 @@ class BaseAgent(ABC):
         state = torch.ByteTensor(
             state).unsqueeze(0).to(self.device).float() / 255.
         with torch.no_grad():
-            action = self.agent.online_net.calculate_q(states=state).argmax().item()
+            if self.agent != None:
+                action = self.agent.online_net.calculate_q(states=state).argmax().item()
+            else:
+                action = self.online_net.calculate_q(states=state).argmax().item()
         return action
 
     @abstractmethod
@@ -204,7 +207,7 @@ class BaseAgent(ABC):
             self.save_models(os.path.join(self.model_dir, 'final'))
             self.online_net.train()
 
-        if self.step % self.save_interval == 0:
+        if self.steps % self.save_interval == 0:
             self.evaluate()
             time = datetime.now().strftime("%Y%m%d-%H%M")
             self.save_models(os.path.join(self.model_dir, 'saved/' + time ))

@@ -27,14 +27,15 @@ def run(args):
         env=env, test_env=test_env, log_dir=log_dir, seed=args.seed,
         cuda=args.cuda, **config)
     model_dir = os.path.join(log_dir, 'model/saved')
+    filepath = ''
     for root, directories, files in os.walk(model_dir):
         for filename in files:
             filepath = os.path.join(root, filename)
-    if filepath and os.path.exists(filepath):
-        agent_temp.load_models(filepath)
+    #if os.path.exists(filepath):
+    #    agent_temp.load_models(filepath)
     agent = IQNAgent(
         env=env, test_env=test_env, log_dir=log_dir, seed=args.seed,
-        cuda=args.cuda, agent = agent_temp, **config)
+        cuda=args.cuda, agent = None, **config)
     
     agent.run()
 

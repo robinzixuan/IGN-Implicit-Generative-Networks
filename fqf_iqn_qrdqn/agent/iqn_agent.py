@@ -120,6 +120,7 @@ class IQNAgent(BaseAgent):
         self.discriminator_optim = optim.Adam(self.discriminator.parameters(), lr=self.lr * 3)
         self.generator_optim = optim.Adam(self.online_net.parameters(),lr=self.lr)
         self.agent = agent
+        self.max_episode_steps = max_episode_steps
 
     def learn(self):
         self.learning_steps += 1
@@ -174,15 +175,23 @@ class IQNAgent(BaseAgent):
                 # Sample the noise of online network to decorrelate between
                 # the action selection and the quantile calculation.
                 self.online_net.sample_noise()
-                next_q = self.agent.online_net.calculate_q(states=next_states)
+                if self.agent != None:
+                    next_q = self.agent.online_net.calculate_q(states=next_states)
+                else:
+                    next_q = self.online_net.calculate_q(states=next_states)
             else:
                 next_state_embeddings =\
                     self.target_net.calculate_state_embeddings(next_states)
-                next_q = self.agent.target_net.calculate_q(
-                    state_embeddings=next_state_embeddings)
+                if self.agent != None:
+                    next_q = self.agent.target_net.calculate_q(
+                        state_embeddings=next_state_embeddings)
+                else:
+                    next_q = self.target_net.calculate_q(
+                        state_embeddings=next_state_embeddings)
 
             #greedy 
-            next_actions =  self.exploit(next_states)
+            #next_actions =  self.exploit(next_states)
+            next_actions =  torch.argmax(next_q, dim=1, keepdim=True)
             assert next_actions.shape == (self.batch_size, 1)
 
             # Calculate features of next states.
