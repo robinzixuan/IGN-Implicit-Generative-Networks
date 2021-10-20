@@ -5,13 +5,13 @@ N_dash: 64
 K: 32
 num_cosines: 64
 kappa: 1.0
-lr: 5.e-5
+lr: 5.e-5                
 memory_size: 1000000
 gamma: 0.99
 multi_step: 1
 update_interval: 4
 target_update_interval: 10000
-start_steps: 50000
+start_steps: 100000           # change  50000
 epsilon_train: 0.01
 epsilon_eval: 0.001
 epsilon_decay_steps: 250000  # It equals to 1M frames.
