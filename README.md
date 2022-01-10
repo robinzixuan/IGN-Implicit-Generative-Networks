@@ -3,15 +3,6 @@
 This is a PyTorch implementation of Fully parameterized Quantile Function(FQF)[[1]](#references), Implicit Quantile Networks(IQN)[[2]](#references) and Quantile Regression DQN(QR-DQN)[[3]](#references). I tried to make it easy for readers to understand algorithms. Please let me know if you have any questions. Also, any pull requests are welcomed.
 
 **UPDATE**
-- 2020.6.9
-    - Bump torch up to 1.5.0.
-- 2020.5.10
-    - Refactor codes.
-    - Fix Prioritized Experience Replay and Noisy Networks.
-    - Test IQN with Rainbow's components.
-- 2020.6.9
-    - Bump Torch up to 1.5.0.
-
 ## Setup
 If you are using Anaconda, first create the virtual environment.
 
