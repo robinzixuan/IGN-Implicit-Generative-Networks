@@ -24,7 +24,7 @@ If you're using other than CUDA 10.2, you may need to install PyTorch. See [inst
 You can train FQF agent using hyperparameters [here](https://github.com/ku2482/fqf-iqn-qrdqn.pytorch/blob/master/config/fqf.yaml).
 
 ```
-python train_iqn.py --cuda CUDA --env_id PongNoFrameskip-v4 --seed 0 --config config/iqn.yaml
+python train_iqn.py --cuda True --env_id PongNoFrameskip-v4 --seed 0 --config config/iqn.yaml
 ```
 
 You can also train IQN or QR-DQN agent in the same way. Note that we log results with the number of frames, which equals to the number of agent's steps multiplied by 4 (e.g. 100M frames means 25M agent's steps).
