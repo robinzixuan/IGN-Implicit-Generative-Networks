@@ -9,7 +9,7 @@ from fqf_iqn_qrdqn.env import make_pytorch_env
 from fqf_iqn_qrdqn.memory import LazyMultiStepMemory, \
     LazyPrioritizedMultiStepMemory
 from fqf_iqn_qrdqn.utils import RunningMeanStats, LinearAnneaer
-
+torch.backends.cudnn.enabled = False
 
 class BaseAgent(ABC):
 
@@ -130,13 +130,13 @@ class BaseAgent(ABC):
             state).unsqueeze(0).to(self.device).float() / 255.
 
         if online:   # added
-            return self.online_net.calculate_q(states=state).argmax().item()
+            return self.online_net.calculate_q(states=state.to(self.device)).argmax().item()
 
         with torch.no_grad():
             if self.agent != None:
-                action = self.agent.online_net.calculate_q(states=state).argmax().item()
+                action = self.agent.online_net.calculate_q(states=state.to(self.device)).argmax().item()
             else:
-                action = self.online_net.calculate_q(states=state).argmax().item()
+                action = self.online_net.calculate_q(states=state.to(self.device)).argmax().item()
         return action
 
     @abstractmethod
