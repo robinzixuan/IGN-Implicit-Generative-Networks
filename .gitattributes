@@ -1,3 +1,4 @@
 *.pth filter=lfs diff=lfs merge=lfs -text
 events.out.tfevents.* filter=lfs diff=lfs merge=lfs -text
+summary filter=lfs diff=lfs merge=lfs -text
 **/summary/** filter=lfs diff=lfs merge=lfs -text
