@@ -4,3 +4,4 @@ summary filter=lfs diff=lfs merge=lfs -text
 events.out.tfevents.1643086397.dgx064.scc.idea.2870934.1 filter=lfs diff=lfs merge=lfs -text
 summary/** filter=lfs diff=lfs merge=lfs -text
 **/summary/** filter=lfs diff=lfs merge=lfs -text
+**/summary filter=lfs diff=lfs merge=lfs -text
